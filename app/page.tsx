@@ -1,6 +1,52 @@
+"use client"
 import Image from "next/image";
 
+import { createWalletClient, createPublicClient, Entity } from "@arkiv-network/sdk"
+import { braga } from "@arkiv-network/sdk/chains"
+import { Hex, http } from "viem"
+import { privateKeyToAccount } from "viem/accounts"
+import { stringToPayload } from '@arkiv-network/sdk/utils';
+import { useEffect, useState } from "react";
+
+const walletClient = createWalletClient({
+  chain: braga,
+  transport: http(),
+  account: privateKeyToAccount(process.env.NEXT_PUBLIC_PRIVATE_KEY as `0x${string}`),
+})
+
+const publicClient = createPublicClient({
+  chain: braga,
+  transport: http(),
+})
+
 export default function Home() {
+  const [entity, setEntity] = useState<Entity | null>(null);
+  const [entityKey, setEntityKey] = useState<Hex | null>(null);
+  const [tx, setTx] = useState("")
+
+  // Read it back
+  const fetchEntity = async () => {
+    const entity = await publicClient.getEntity(entityKey as `0x${string}`);
+    return entity;
+  }
+
+  const
+  
+  const writeEntity = async () => {
+    // Create an entity
+    const { entityKey, txHash } = await walletClient.createEntity({
+      payload: stringToPayload('Hello, Arkiv!'),
+      contentType: 'text/plain',
+      attributes: [{ key: 'type', value: 'greeting' }],
+      expiresIn: 3600,
+    });
+
+    console.log('Entity created:', entityKey);
+    console.log('Transaction:', txHash);
+    setEntityKey(entityKey);
+    setTx(txHash);
+  }
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
@@ -14,9 +60,22 @@ export default function Home() {
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
           <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+            Arkiv App Playground
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+          <button onClick={async () => {
+            const entity = await fetchEntity();
+            setEntity(entity);
+            console.log(entity);
+          }}>Read Entity</button>
+          <pre>
+            {JSON.stringify(entity, null, 2)}
+          </pre>
+          <button onClick={async () => {
+            await writeEntity();
+            const entity = await fetchEntity();
+            setEntityKey(entity.key);
+          }}>Write Entity</button>
+          {/* <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Looking for a starting point or more instructions? Head over to{" "}
             <a
               href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
@@ -32,9 +91,9 @@ export default function Home() {
               Learning
             </a>{" "}
             center.
-          </p>
+          </p> */}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+        {/* <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
           <a
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
@@ -58,7 +117,7 @@ export default function Home() {
           >
             Documentation
           </a>
-        </div>
+        </div> */}
       </main>
     </div>
   );
